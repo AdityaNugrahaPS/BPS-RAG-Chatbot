@@ -24,7 +24,6 @@ export interface SavedCreds {
   supabase?: { url: string; service_key: string }
   n8n?: { url: string; api_key: string }
   waha?: { url: string; api_key?: string }
-  tavily?: { api_key: string }
 }
 
 export interface ProcessConfig {

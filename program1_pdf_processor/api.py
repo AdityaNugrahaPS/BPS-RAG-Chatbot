@@ -231,7 +231,7 @@ async def save_credential(req: CredSaveRequest, background_tasks: BackgroundTask
         existing[req.id] = req.data
         ALL_CREDS_FILE.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
         # Sync ke n8n di background (tidak block response)
-        if req.id in ("tavily", "supabase", "ai_models"):
+        if req.id in ("supabase", "ai_models"):
             background_tasks.add_task(_sync_credential_to_n8n, req.id, req.data, existing)
         return {"ok": True}
     except Exception as e:
@@ -260,24 +260,10 @@ async def _sync_credential_to_n8n(cred_id: str, data: Any, all_creds: dict):
             await c.put(f"{n8n_url}/api/v1/workflows/{wf_id}", headers=hdrs, json=payload)
 
     n8n_creds = all_creds.get("n8n", {})
-    wf_tavily = n8n_creds.get("workflow_tavily", "")
     wf_rag    = n8n_creds.get("workflow_rag", "")
 
     try:
-        if cred_id == "tavily":
-            if not wf_tavily:
-                return
-            wf = await fetch_workflow(wf_tavily)
-            if not wf:
-                return
-            new_key = data.get("api_key", "") if isinstance(data, dict) else ""
-            for node in wf.get("nodes", []):
-                for h in node.get("parameters", {}).get("headerParameters", {}).get("parameters", []):
-                    if h.get("name") == "Authorization" and h.get("value", "").startswith("Bearer tvly"):
-                        h["value"] = f"Bearer {new_key}"
-            await push_workflow(wf_tavily, wf)
-
-        elif cred_id == "supabase":
+        if cred_id == "supabase":
             if not wf_rag:
                 return
             wf = await fetch_workflow(wf_rag)

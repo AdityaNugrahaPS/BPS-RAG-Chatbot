@@ -18,9 +18,6 @@ const FIELDS: Record<string, CredField[]> = {
     { key: 'url',     label: 'n8n URL',    placeholder: 'http://localhost:5678',  type: 'text',     hint: 'URL dashboard n8n kamu' },
     { key: 'api_key', label: 'API Key',    placeholder: 'eyJhbG...',             type: 'password', hint: 'API key dari n8n Settings → API Keys' },
   ],
-  tavily: [
-    { key: 'api_key', label: 'API Key Tavily', placeholder: 'tvly-dev-...', type: 'password', hint: 'API key dari app.tavily.com' },
-  ],
 }
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -637,148 +634,6 @@ function SupabasePanel({ saved, onSaved, showToast, header, toast }: PanelProps)
   )
 }
 
-function TavilyPanel({ saved, onSaved, showToast, header, toast }: PanelProps) {
-  const existing = saved || {}
-  const hasCreds = !!(existing.api_key)
-
-  const [editing, setEditing] = useState(!hasCreds)
-  const [apiKey,  setApiKey]  = useState(existing.api_key || '')
-  const [showKey, setShowKey] = useState(false)
-  const [saving,  setSaving]  = useState(false)
-
-  const inputCls   = 'w-full px-3 py-2.5 rounded-xl text-sm text-t1 placeholder-[#3F3F46] outline-none transition-all duration-150'
-  const inputStyle = { background: 'var(--fill-3)', border: '1px solid var(--bdr-4)' }
-  const focusStyle = { border: '1px solid rgba(10,132,255,0.5)', boxShadow: '0 0 0 3px rgba(10,132,255,0.08)' }
-
-  const maskedKey = apiKey ? apiKey.slice(0, 8) + '••••••' + apiKey.slice(-4) : ''
-
-  async function handleSave() {
-    if (!apiKey.trim()) return
-    setSaving(true)
-    try {
-      await fetch('/api/credentials/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: 'tavily', data: { api_key: apiKey.trim() } }),
-      })
-      onSaved?.({ credId: 'tavily', data: { api_key: apiKey.trim() } })
-      showToast(true, 'Tavily API key berhasil disimpan & disync ke n8n')
-      setEditing(false)
-    } catch (e: any) {
-      showToast(false, `Gagal menyimpan: ${e.message}`)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function handleDelete() {
-    setSaving(true)
-    try {
-      await fetch('/api/credentials/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: 'tavily', data: {} }),
-      })
-      onSaved?.({ credId: 'tavily', data: {} })
-      setApiKey('')
-      setEditing(true)
-      showToast(true, 'Tavily API key dihapus')
-    } catch (e: any) {
-      showToast(false, `Gagal menghapus: ${e.message}`)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="p-8 min-h-screen">
-      {header}
-      <div className="rounded-2xl p-6 max-w-xl"
-        style={{ background: 'var(--elevated)', border: '1px solid var(--bdr-3)' }}>
-        <p className="text-xs font-semibold text-t5 uppercase tracking-widest mb-5">Konfigurasi</p>
-
-        {!editing && hasCreds ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4 p-4 rounded-xl"
-              style={{ background: 'rgba(191,90,242,0.05)', border: '1px solid rgba(191,90,242,0.15)' }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(191,90,242,0.1)' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-t4 mb-0.5">API Key</p>
-                <p className="text-sm font-mono text-t1 truncate">
-                  {showKey ? apiKey : maskedKey}
-                </p>
-                <button onClick={() => setShowKey(s => !s)}
-                  className="text-2xs text-t5 hover:text-t3 transition-colors mt-0.5">
-                  {showKey ? 'Sembunyikan key' : 'Tampilkan key'}
-                </button>
-              </div>
-              <div className="flex gap-1 flex-shrink-0">
-                <button onClick={() => setEditing(true)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-t3 hover:text-t1 hover:bg-white/10 transition-all">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button onClick={handleDelete} disabled={saving}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-t3 hover:text-[#FF453A] hover:bg-red-500/10 transition-all">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-                    <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-t5">
-              Endpoint: <span className="font-mono">https://api.tavily.com/search</span>
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-t3 mb-1.5">API Key Tavily</label>
-              <div className="relative">
-                <input value={apiKey} onChange={e => setApiKey(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSave()}
-                  type={showKey ? 'text' : 'password'} placeholder="tvly-dev-..."
-                  autoComplete="new-password"
-                  className={inputCls + ' pr-10'} style={inputStyle}
-                  onFocus={e => Object.assign(e.target.style, focusStyle)}
-                  onBlur={e => Object.assign(e.target.style, inputStyle)} />
-                <button type="button" onClick={() => setShowKey(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-t4 hover:text-t2 transition-colors" tabIndex={-1}>
-                  <EyeIcon open={showKey} />
-                </button>
-              </div>
-              <p className="text-2xs text-t5 mt-1">Ambil API key dari <span className="text-t3">app.tavily.com</span></p>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <button onClick={handleSave} disabled={!apiKey.trim() || saving}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-t1 transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{ background: '#0A84FF' }}>
-                {saving ? 'Menyimpan…' : 'Simpan'}
-              </button>
-              {hasCreds && (
-                <button onClick={() => { setApiKey(existing.api_key); setEditing(false) }}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-t3 hover:text-t1 transition-colors"
-                  style={{ background: 'var(--fill-3)', border: '1px solid var(--bdr-3)' }}>
-                  Batal
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-      {toast && <Toast toast={toast} />}
-    </div>
-  )
-}
-
 function N8nPanel({ saved, onSaved, showToast, header, toast }: PanelProps) {
   const existing = saved || {}
   const hasCreds = !!(existing.url && existing.api_key)
@@ -1249,10 +1104,6 @@ export default function CredentialDetail({ credId, savedData = {}, onBack, onSav
         {toast && <Toast toast={toast} />}
       </div>
     )
-  }
-
-  if (credId === 'tavily') {
-    return <TavilyPanel saved={savedData['tavily']} onSaved={onSaved} showToast={showToast} header={header} toast={toast} />
   }
 
   if (credId === 'n8n') {

@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme variables ── */
+:root {
+  /* backgrounds */
+  --bg:       #0B0B0C;
+  --surface:  #121214;
+  --elevated: #1C1C1F;
+  --sidebar-bg: #121214;
+
+  /* fills (white-on-dark) */
+  --fill-1: rgba(255,255,255,0.02);
+  --fill-2: rgba(255,255,255,0.03);
+  --fill-3: rgba(255,255,255,0.04);
+  --fill-4: rgba(255,255,255,0.06);
+  --fill-5: rgba(255,255,255,0.08);
+
+  /* borders */
+  --bdr-1: rgba(255,255,255,0.04);
+  --bdr-2: rgba(255,255,255,0.05);
+  --bdr-3: rgba(255,255,255,0.06);
+  --bdr-4: rgba(255,255,255,0.08);
+  --bdr-5: rgba(255,255,255,0.10);
+  --bdr-6: rgba(255,255,255,0.15);
+
+  /* text */
+  --txt-1: #FFFFFF;
+  --txt-2: #E4E4E7;
+  --txt-3: #C4C4C8;
+  --txt-4: #A1A1AA;
+  --txt-5: #71717A;
+
+  /* scrollbar */
+  --scroll-thumb: rgba(255,255,255,0.08);
+  --scroll-hover: rgba(255,255,255,0.15);
+
+  /* range */
+  --range-track: rgba(255,255,255,0.08);
+  --range-thumb-border: #0B0B0C;
+}
+
+[data-theme="light"] {
+  --bg:       #F2F2F7;
+  --surface:  #FFFFFF;
+  --elevated: #FFFFFF;
+  --sidebar-bg: #1E3A5F;
+
+  --fill-1: rgba(0,0,0,0.02);
+  --fill-2: rgba(0,0,0,0.03);
+  --fill-3: rgba(0,0,0,0.04);
+  --fill-4: rgba(0,0,0,0.05);
+  --fill-5: rgba(0,0,0,0.07);
+
+  --bdr-1: rgba(0,0,0,0.06);
+  --bdr-2: rgba(0,0,0,0.08);
+  --bdr-3: rgba(0,0,0,0.09);
+  --bdr-4: rgba(0,0,0,0.11);
+  --bdr-5: rgba(0,0,0,0.13);
+  --bdr-6: rgba(0,0,0,0.18);
+
+  --txt-1: #1C1C1E;
+  --txt-2: #3C3C43;
+  --txt-3: #6C6C70;
+  --txt-4: #8E8E93;
+  --txt-5: #AEAEB2;
+
+  --scroll-thumb: rgba(0,0,0,0.12);
+  --scroll-hover: rgba(0,0,0,0.20);
+
+  --range-track: rgba(0,0,0,0.10);
+  --range-thumb-border: #F2F2F7;
+}
+
+/* Override Tailwind bg classes agar pakai CSS variable langsung */
+.bg-bg      { background-color: var(--bg) !important; }
+.bg-surface { background-color: var(--surface) !important; }
+.bg-elevated{ background-color: var(--elevated) !important; }
+.text-t1    { color: var(--txt-1) !important; }
+.text-t2    { color: var(--txt-2) !important; }
+.text-t3    { color: var(--txt-3) !important; }
+.text-t4    { color: var(--txt-4) !important; }
+.text-t5    { color: var(--txt-5) !important; }
+.placeholder-t4::placeholder { color: var(--txt-4) !important; }
+
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg);
+    color: var(--txt-1);
+    font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--range-track);
+    border-radius: 9999px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #0A84FF;
+    cursor: pointer;
+    border: 2px solid var(--range-thumb-border);
+    box-shadow: 0 0 0 2px rgba(10,132,255,0.25);
+    transition: box-shadow 0.15s ease;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 4px rgba(10,132,255,0.2);
+  }
+}

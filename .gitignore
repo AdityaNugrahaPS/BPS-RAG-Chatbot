@@ -1,0 +1,61 @@
+# ── Credentials & Secrets ──────────────────────────────────────
+program1_pdf_processor/.credentials.json
+program1_pdf_processor/.credentials_all.json
+*.env
+.env.*
+!.env.example
+
+# ── Workflow JSON (berisi API keys) ────────────────────────────
+current_workflow.json
+n8n_workflow*.json
+workflow_*.json
+*_workflow.json
+push_*.json
+kb_workflow.json
+main_workflow.json
+rag_subworkflow.json
+bps_api_subworkflow.json
+dash_update.json
+
+# ── Execution logs & debug files ───────────────────────────────
+exec_*.json
+recent*.json
+
+# ── BPS data crawl results ─────────────────────────────────────
+bps_data.json
+bps_domains.json
+bps_press.json
+bps_pub.json
+bps_search.json
+bps_static.json
+bps_test_data.json
+
+# ── Node modules ───────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+
+# ── Build output ───────────────────────────────────────────────
+frontend/dist/
+frontend/.vite/
+
+# ── Python ─────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+program1_pdf_processor/uploads/
+program1_pdf_processor/*.log
+
+# ── Supabase local ─────────────────────────────────────────────
+supabase/.temp/
+supabase/volumes/
+
+# ── OS files ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ───────────────────────────────────────────────────────
+*.log
+logs/

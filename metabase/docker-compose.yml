@@ -1,0 +1,27 @@
+services:
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    restart: always
+    ports:
+      - "127.0.0.1:3002:3000"
+    volumes:
+      - metabase_data:/metabase-data
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db
+      MB_SITE_NAME: "BPS Pekanbaru Chatbot Dashboard"
+      MB_SITE_LOCALE: "id"
+      JAVA_TIMEZONE: "Asia/Jakarta"
+    healthcheck:
+      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  metabase_data: {}

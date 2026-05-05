@@ -24,11 +24,11 @@ timeout /t 4 /nobreak >nul
 :: Buka browser
 echo.
 echo  Membuka browser...
-start http://localhost:5174
+start http://localhost:5000
 
 echo.
 echo  ================================================
-echo   Dashboard berjalan di: http://localhost:5174
+echo   Dashboard berjalan di: http://localhost:5000
 echo   Tekan CTRL+C di window API/Frontend untuk stop
 echo  ================================================
 echo.

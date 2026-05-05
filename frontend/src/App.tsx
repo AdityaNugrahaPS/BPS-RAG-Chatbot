@@ -62,7 +62,8 @@ function FloatingJobBar({ job, onClickResume }: { job: ActiveJob; onClickResume:
 export default function App() {
   const [page,       setPage]       = useState<string>(() => localStorage.getItem('lastPage') || 'dashboard')
   const [detailId,   setDetailId]   = useState<string | null>(() => localStorage.getItem('lastDetailId') || null)
-  const [savedCreds, setSavedCreds] = useState<SavedCreds>({})
+  const [savedCreds,  setSavedCreds]  = useState<SavedCreds>({})
+  const [credsLoaded, setCredsLoaded] = useState(false)
   const [theme,      setTheme]      = useState<string>(() => localStorage.getItem('theme') || 'dark')
 
   useEffect(() => {
@@ -109,8 +110,8 @@ export default function App() {
   useEffect(() => {
     fetch('/api/credentials/all')
       .then(r => r.ok ? r.json() : {})
-      .then(data => setSavedCreds(data))
-      .catch(() => {})
+      .then(data => { setSavedCreds(data); setCredsLoaded(true) })
+      .catch(() => setCredsLoaded(true))
   }, [])
 
   function handleNavigate(target: string, param: string | null = null) {
@@ -149,18 +150,14 @@ export default function App() {
           />
         )}
         {page === 'credentials'        && (
-          <Credentials
-            savedData={savedCreds}
-            onNavigate={handleNavigate}
-          />
+          credsLoaded
+            ? <Credentials savedData={savedCreds} onNavigate={handleNavigate} />
+            : <div className="flex items-center justify-center h-full"><p className="text-sm text-t4">Memuat...</p></div>
         )}
         {page === 'credential-detail'  && detailId && (
-          <CredentialDetail
-            credId={detailId}
-            savedData={savedCreds}
-            onBack={() => handleNavigate('credentials')}
-            onSaved={handleCredSaved}
-          />
+          credsLoaded
+            ? <CredentialDetail credId={detailId} savedData={savedCreds} onBack={() => handleNavigate('credentials')} onSaved={handleCredSaved} />
+            : <div className="flex items-center justify-center h-full"><p className="text-sm text-t4">Memuat...</p></div>
         )}
       </main>
 

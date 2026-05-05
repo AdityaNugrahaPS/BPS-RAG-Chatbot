@@ -45,7 +45,11 @@ __pycache__/
 .venv/
 venv/
 program1_pdf_processor/uploads/
+program1_pdf_processor/uploads_temp/
 program1_pdf_processor/*.log
+
+# ── Claude Code memory (berisi credentials) ────────────────────
+.claude/
 
 # ── Supabase local ─────────────────────────────────────────────
 supabase/.temp/

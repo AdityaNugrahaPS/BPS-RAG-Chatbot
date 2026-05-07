@@ -1,0 +1,985 @@
+{
+  "updatedAt": "2026-05-05T08:51:48.751Z",
+  "createdAt": "2026-03-31T17:30:24.438Z",
+  "id": "0Ry8fETqKXE6pnyc",
+  "name": "BPS WhatsApp RAG Chatbot",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "WAHA Trigger",
+      "type": "@devlikeapro/n8n-nodes-waha.wahaTrigger",
+      "position": [
+        3856,
+        4336
+      ],
+      "typeVersion": 202502,
+      "id": "1ad4d45b-cfe8-4ff5-84f0-f1d6ba451500",
+      "webhookId": "c018fd02-cfe4-449d-8ea6-a6e9c45edfc1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "40a7fb3f-0ebb-456d-b4a5-83bbeb5c9adb",
+              "name": "message",
+              "value": "={{ $json.payload.body }}",
+              "type": "string"
+            },
+            {
+              "id": "c8fa5458-e8df-425a-aa63-c3f9f255c5f7",
+              "name": "sender",
+              "value": "={{ $json.payload?.from ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "name": "Set Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        4128,
+        4352
+      ],
+      "typeVersion": 3.4,
+      "id": "d5fe2ac6-53e6-44ff-a6db-f8d2d71cc234"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1c75c83e-f75e-4ada-a052-ecc1af8b0005",
+              "leftValue": "={{ $json.sender }}",
+              "rightValue": "@g.us",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "933f4247-af94-4308-8618-33e57080106b",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "name": "Filter Private Messages",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        4272,
+        4352
+      ],
+      "typeVersion": 2.3,
+      "id": "02feab0c-7631-4e41-9e60-24bed1229440"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Seen",
+        "session": "={{ $('WAHA Trigger').item.json.session }}",
+        "chatId": "={{ $('WAHA Trigger').item.json.payload.from }}",
+        "participant": "",
+        "requestOptions": {}
+      },
+      "name": "Send Seen",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "position": [
+        4480,
+        4352
+      ],
+      "typeVersion": 202502,
+      "id": "6afd1faa-5cfc-4005-855e-f7a962c9619a",
+      "credentials": {
+        "wahaApi": {
+          "id": "jqVzLBdaW6UcW6CG",
+          "name": "WAHA account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Start Typing",
+        "session": "={{ $('WAHA Trigger').item.json.session }}",
+        "chatId": "={{ $('WAHA Trigger').item.json.payload.from }}",
+        "requestOptions": {}
+      },
+      "name": "Start Typing",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "position": [
+        4608,
+        4352
+      ],
+      "typeVersion": 202502,
+      "id": "3c314ac0-c37b-4c4b-a4ec-3f9608ec7fc9",
+      "credentials": {
+        "wahaApi": {
+          "id": "jqVzLBdaW6UcW6CG",
+          "name": "WAHA account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        4736,
+        4352
+      ],
+      "typeVersion": 1.1,
+      "id": "1fa9ca89-a616-4d51-9844-6931f8132ffa",
+      "webhookId": "e90d80f6-2f27-484b-8df7-8b87a5f74781"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Stop Typing",
+        "session": "={{ $('WAHA Trigger').item.json.session }}",
+        "chatId": "={{ $('WAHA Trigger').item.json.payload.from }}",
+        "requestOptions": {}
+      },
+      "name": "Stop Typing",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "position": [
+        5152,
+        4352
+      ],
+      "typeVersion": 202502,
+      "id": "e6e80e8b-ab46-4e5a-9957-79622bfe7a2c",
+      "credentials": {
+        "wahaApi": {
+          "id": "jqVzLBdaW6UcW6CG",
+          "name": "WAHA account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('WAHA Trigger').item.json.session }}",
+        "chatId": "={{ $('WAHA Trigger').item.json.payload.from }}",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "requestOptions": {}
+      },
+      "name": "Send Reply",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "position": [
+        5280,
+        4352
+      ],
+      "typeVersion": 202502,
+      "id": "8d8ba324-391e-44c1-8808-afb240e5e5ad",
+      "credentials": {
+        "wahaApi": {
+          "id": "jqVzLBdaW6UcW6CG",
+          "name": "WAHA account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Set Fields').item.json.message }}",
+        "options": {
+          "systemMessage": "Kamu adalah asisten AI yang ramah dan helpful. Jawab pertanyaan dengan singkat dan padat.\n\nATURAN WAJIB:\n1. SELALU gunakan RAG_Knowledge_Base terlebih dahulu untuk setiap pertanyaan.\n2. Jika RAG tidak menemukan informasi yang relevan, gunakan Tavily_Internet_Search.\n3. Jika kedua tool tidak menemukan jawaban, katakan: \"Maaf, saya tidak memiliki informasi tersebut.\"\n4. JANGAN menjawab dari pengetahuan sendiri tanpa menggunakan tool."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        4880,
+        4368
+      ],
+      "id": "0acacadf-b3eb-4b34-ad42-52dfc1e46504",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WAHA Trigger').item.json.payload.from }}",
+        "contextWindowLength": 1
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        4976,
+        4688
+      ],
+      "id": "8642c963-77e2-4570-96db-93a36a9cc2b4",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "ULKfxE2KB84Qeji0",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "RAG_Knowledge_Base",
+        "description": "Gunakan jika pertanyaan berkaitan dengan data statistik, publikasi, atau informasi dari knowledge base. Parameter: query (string) - pertanyaan atau kata kunci dari user.",
+        "workflowId": {
+          "__rl": true,
+          "value": "H6CBpeCionMIdqsv",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $input.first().json.input || $input.first().json.query }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "q1",
+              "displayName": "query",
+              "required": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        5104,
+        4672
+      ],
+      "id": "bd029739-d108-4efd-8972-3cb6d3653565",
+      "name": "RAG Knowledge Base"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        4816,
+        4624
+      ],
+      "id": "c7560bf5-4065-4126-8a52-bdcff2e491a1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Uue5JtgQdiT46Pgq",
+          "name": "Google Gemini(PaLM) Api account 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Gunakan tool ini untuk mencari data statistik terbaru dari API resmi BPS. \nPanggil jika RAG Knowledge Base tidak menemukan jawaban yang relevan.",
+        "workflowId": {
+          "__rl": true,
+          "value": "8jAnJCCb31i1e6zg",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/8jAnJCCb31i1e6zg",
+          "cachedResultName": "BPS API Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        5264,
+        4608
+      ],
+      "id": "ad6c2658-a200-4622-9e76-a52c00931a89",
+      "name": "Call 'BPS API Tool'"
+    }
+  ],
+  "connections": {
+    "WAHA Trigger": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Filter Private Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Private Messages": {
+      "main": [
+        [
+          {
+            "node": "Send Seen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Seen": {
+      "main": [
+        [
+          {
+            "node": "Start Typing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Typing": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop Typing": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Knowledge Base": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'BPS API Tool'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Stop Typing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": [
+        0
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "e5b98b2e-d0b6-4de8-ab40-dcdb3c95b154",
+  "activeVersionId": "e3cd1cd6-c348-44a4-a636-70287472365b",
+  "versionCounter": 1267,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-03-31T17:30:24.445Z",
+      "createdAt": "2026-03-31T17:30:24.445Z",
+      "role": "workflow:owner",
+      "workflowId": "0Ry8fETqKXE6pnyc",
+      "projectId": "0rO4s8EEAi5n3EoL",
+      "project": {
+        "updatedAt": "2026-03-03T03:09:43.109Z",
+        "createdAt": "2026-03-03T03:08:59.321Z",
+        "id": "0rO4s8EEAi5n3EoL",
+        "name": "Aditya Nugraha Pratama Saiya <adityanugrahasaiya@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "13c65b67-b551-4e0b-8892-7646dea4b73a"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-05-05T08:48:46.491Z",
+    "createdAt": "2026-05-05T08:48:46.491Z",
+    "versionId": "e3cd1cd6-c348-44a4-a636-70287472365b",
+    "workflowId": "0Ry8fETqKXE6pnyc",
+    "nodes": [
+      {
+        "parameters": {},
+        "name": "WAHA Trigger",
+        "type": "@devlikeapro/n8n-nodes-waha.wahaTrigger",
+        "position": [
+          3856,
+          4336
+        ],
+        "typeVersion": 202502,
+        "id": "1ad4d45b-cfe8-4ff5-84f0-f1d6ba451500",
+        "webhookId": "c018fd02-cfe4-449d-8ea6-a6e9c45edfc1"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "40a7fb3f-0ebb-456d-b4a5-83bbeb5c9adb",
+                "name": "message",
+                "value": "={{ $json.payload.body }}",
+                "type": "string"
+              },
+              {
+                "id": "c8fa5458-e8df-425a-aa63-c3f9f255c5f7",
+                "name": "sender",
+                "value": "={{ $json.payload?.from ?? '' }}",
+                "type": "string"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "name": "Set Fields",
+        "type": "n8n-nodes-base.set",
+        "position": [
+          4128,
+          4352
+        ],
+        "typeVersion": 3.4,
+        "id": "d5fe2ac6-53e6-44ff-a6db-f8d2d71cc234"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "1c75c83e-f75e-4ada-a052-ecc1af8b0005",
+                "leftValue": "={{ $json.sender }}",
+                "rightValue": "@g.us",
+                "operator": {
+                  "type": "string",
+                  "operation": "notContains"
+                }
+              },
+              {
+                "id": "933f4247-af94-4308-8618-33e57080106b",
+                "leftValue": "={{ $json.message }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "name": "Filter Private Messages",
+        "type": "n8n-nodes-base.if",
+        "position": [
+          4272,
+          4352
+        ],
+        "typeVersion": 2.3,
+        "id": "02feab0c-7631-4e41-9e60-24bed1229440"
+      },
+      {
+        "parameters": {
+          "resource": "Chatting",
+          "operation": "Send Seen",
+          "session": "={{ $('WAHA Trigger').item.json.session }}",
+          "chatId": "={{ $('WAHA Trigger').item.json.payload.from }}",
+          "participant": "",
+          "requestOptions": {}
+        },
+        "name": "Send Seen",
+        "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+        "position": [
+          4480,
+          4352
+        ],
+        "typeVersion": 202502,
+        "id": "6afd1faa-5cfc-4005-855e-f7a962c9619a",
+        "credentials": {
+          "wahaApi": {
+            "id": "jqVzLBdaW6UcW6CG",
+            "name": "WAHA account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "Chatting",
+          "operation": "Start Typing",
+          "session": "={{ $('WAHA Trigger').item.json.session }}",
+          "chatId": "={{ $('WAHA Trigger').item.json.payload.from }}",
+          "requestOptions": {}
+        },
+        "name": "Start Typing",
+        "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+        "position": [
+          4608,
+          4352
+        ],
+        "typeVersion": 202502,
+        "id": "3c314ac0-c37b-4c4b-a4ec-3f9608ec7fc9",
+        "credentials": {
+          "wahaApi": {
+            "id": "jqVzLBdaW6UcW6CG",
+            "name": "WAHA account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "amount": 1
+        },
+        "name": "Wait",
+        "type": "n8n-nodes-base.wait",
+        "position": [
+          4736,
+          4352
+        ],
+        "typeVersion": 1.1,
+        "id": "1fa9ca89-a616-4d51-9844-6931f8132ffa",
+        "webhookId": "e90d80f6-2f27-484b-8df7-8b87a5f74781"
+      },
+      {
+        "parameters": {
+          "resource": "Chatting",
+          "operation": "Stop Typing",
+          "session": "={{ $('WAHA Trigger').item.json.session }}",
+          "chatId": "={{ $('WAHA Trigger').item.json.payload.from }}",
+          "requestOptions": {}
+        },
+        "name": "Stop Typing",
+        "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+        "position": [
+          5152,
+          4352
+        ],
+        "typeVersion": 202502,
+        "id": "e6e80e8b-ab46-4e5a-9957-79622bfe7a2c",
+        "credentials": {
+          "wahaApi": {
+            "id": "jqVzLBdaW6UcW6CG",
+            "name": "WAHA account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "Chatting",
+          "operation": "Send Text",
+          "session": "={{ $('WAHA Trigger').item.json.session }}",
+          "chatId": "={{ $('WAHA Trigger').item.json.payload.from }}",
+          "text": "={{ $('AI Agent').item.json.output }}",
+          "requestOptions": {}
+        },
+        "name": "Send Reply",
+        "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+        "position": [
+          5280,
+          4352
+        ],
+        "typeVersion": 202502,
+        "id": "8d8ba324-391e-44c1-8808-afb240e5e5ad",
+        "credentials": {
+          "wahaApi": {
+            "id": "jqVzLBdaW6UcW6CG",
+            "name": "WAHA account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {
+            "systemMessage": "Kamu adalah asisten AI yang ramah dan helpful. Jawab pertanyaan dengan singkat dan padat.\n\nATURAN WAJIB:\n1. SELALU gunakan RAG_Knowledge_Base terlebih dahulu untuk setiap pertanyaan.\n2. Jika RAG tidak menemukan informasi yang relevan, gunakan Tavily_Internet_Search.\n3. Jika kedua tool tidak menemukan jawaban, katakan: \"Maaf, saya tidak memiliki informasi tersebut.\"\n4. JANGAN menjawab dari pengetahuan sendiri tanpa menggunakan tool."
+          },
+          "promptType": "define",
+          "text": "={{ $('Set Fields').item.json.message }}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          4880,
+          4368
+        ],
+        "id": "0acacadf-b3eb-4b34-ad42-52dfc1e46504",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $('WAHA Trigger').item.json.payload.from }}",
+          "contextWindowLength": 1
+        },
+        "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+        "typeVersion": 1.3,
+        "position": [
+          4976,
+          4688
+        ],
+        "id": "8642c963-77e2-4570-96db-93a36a9cc2b4",
+        "name": "Postgres Chat Memory",
+        "credentials": {
+          "postgres": {
+            "id": "ULKfxE2KB84Qeji0",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "name": "RAG_Knowledge_Base",
+          "description": "Gunakan jika pertanyaan berkaitan dengan data statistik, publikasi, atau informasi dari knowledge base. Parameter: query (string) - pertanyaan atau kata kunci dari user.",
+          "workflowId": {
+            "__rl": true,
+            "value": "H6CBpeCionMIdqsv",
+            "mode": "id"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "query": "={{ $input.first().json.input || $input.first().json.query }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "q1",
+                "displayName": "query",
+                "required": true,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "removed": false
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2,
+        "position": [
+          5104,
+          4672
+        ],
+        "id": "bd029739-d108-4efd-8972-3cb6d3653565",
+        "name": "RAG Knowledge Base"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          4816,
+          4624
+        ],
+        "id": "c7560bf5-4065-4126-8a52-bdcff2e491a1",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "Uue5JtgQdiT46Pgq",
+            "name": "Google Gemini(PaLM) Api account 1"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "description": "Gunakan tool ini untuk mencari data statistik terbaru dari API resmi BPS. \nPanggil jika RAG Knowledge Base tidak menemukan jawaban yang relevan.",
+          "workflowId": {
+            "__rl": true,
+            "value": "8jAnJCCb31i1e6zg",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/8jAnJCCb31i1e6zg",
+            "cachedResultName": "BPS API Tool"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {},
+            "matchingColumns": [],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.2,
+        "position": [
+          5264,
+          4608
+        ],
+        "id": "ad6c2658-a200-4622-9e76-a52c00931a89",
+        "name": "Call 'BPS API Tool'"
+      }
+    ],
+    "connections": {
+      "WAHA Trigger": {
+        "main": [
+          [
+            {
+              "node": "Set Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Fields": {
+        "main": [
+          [
+            {
+              "node": "Filter Private Messages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Private Messages": {
+        "main": [
+          [
+            {
+              "node": "Send Seen",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Seen": {
+        "main": [
+          [
+            {
+              "node": "Start Typing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Start Typing": {
+        "main": [
+          [
+            {
+              "node": "Wait",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Stop Typing": {
+        "main": [
+          [
+            {
+              "node": "Send Reply",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Postgres Chat Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "RAG Knowledge Base": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call 'BPS API Tool'": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Stop Typing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Aditya Nugraha Pratama Saiya",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-05-05T08:48:46.927Z",
+        "id": 358,
+        "workflowId": "0Ry8fETqKXE6pnyc",
+        "versionId": "e3cd1cd6-c348-44a4-a636-70287472365b",
+        "event": "activated",
+        "userId": "13c65b67-b551-4e0b-8892-7646dea4b73a"
+      },
+      {
+        "createdAt": "2026-05-05T08:48:46.816Z",
+        "id": 357,
+        "workflowId": "0Ry8fETqKXE6pnyc",
+        "versionId": "e3cd1cd6-c348-44a4-a636-70287472365b",
+        "event": "deactivated",
+        "userId": "13c65b67-b551-4e0b-8892-7646dea4b73a"
+      }
+    ]
+  }
+}

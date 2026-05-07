@@ -1,2 +1,1 @@
-TRUNCATE TABLE documents;
-TRUNCATE TABLE ingested_files;
+TRUNCATE TABLE n8n_chat_histories;

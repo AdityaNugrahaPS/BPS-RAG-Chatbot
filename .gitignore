@@ -59,6 +59,12 @@ supabase/volumes/
 .DS_Store
 Thumbs.db
 desktop.ini
+~$*
+
+# ── Generated files ────────────────────────────────────────────
+*.pptx
+create_ppt.py
+main_workflow_backup.json
 
 # ── Logs ───────────────────────────────────────────────────────
 *.log

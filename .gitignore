@@ -1,21 +1,26 @@
 # ── Credentials & Secrets ──────────────────────────────────────
 program1_pdf_processor/.credentials.json
 program1_pdf_processor/.credentials_all.json
+.env
 *.env
 .env.*
 !.env.example
 
-# ── Workflow JSON (berisi API keys) ────────────────────────────
-current_workflow.json
-n8n_workflow*.json
-workflow_*.json
-*_workflow.json
-push_*.json
-kb_workflow.json
-main_workflow.json
-rag_subworkflow.json
-bps_api_subworkflow.json
-dash_update.json
+# ── Workflow JSON di root (berisi API keys mentah) ─────────────
+# Versi sanitasi disimpan di folder n8n_workflows/ (boleh di-commit)
+/main_workflow.json
+/kb_workflow.json
+/bps_api_subworkflow.json
+/main_workflow_backup.json
+/current_workflow.json
+/n8n_workflow*.json
+/workflow_*.json
+/*_workflow.json
+/push_*.json
+/dash_update.json
+
+# ── Dokumen laporan KP (private milik pengembang) ──────────────
+_laporan/
 
 # ── Execution logs & debug files ───────────────────────────────
 exec_*.json

@@ -1,0 +1,153 @@
+{
+  "name": "BPS API Tool",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst rawQuery = input.keyword || input.query || input.input || 'statistik';\n\n// Stopwords yang lebih lengkap - termasuk kata umum yang tidak bermakna\nconst stopwords = [\n  'kota','pekanbaru','tahun','berapa','apa','data','statistik',\n  'yang','untuk','pada','bulan','adalah','jumlah','total',\n  'kecamatan','kelurahan','terbaru','terkini','berikan','tolong',\n  'bisa','mohon','info','informasi','tentang','mengenai','dari',\n  'di','dan','atau','dengan','dalam','ada'\n];\n\nconst words = String(rawQuery).toLowerCase()\n  .replace(/[^a-z0-9\\s]/g, ' ')\n  .split(/\\s+/)\n  .filter(w => w.length > 3 && !stopwords.includes(w));\n\n// Ambil 2 kata paling relevan (bukan hanya 1)\nconst keyword = words.slice(0, 2).join(' ') || rawQuery || 'statistik';\n\nreturn [{ json: { keyword } }];"
+      },
+      "id": "code-extract",
+      "name": "Extract Keyword",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://webapi.bps.go.id/v1/api/list?model=pressrelease&domain=1471&keyword={{ encodeURIComponent($json.keyword) }}&perpage=3&key=__BPS_API_KEY__",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "http-press",
+      "name": "BPS Pressrelease",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://webapi.bps.go.id/v1/api/list?model=statictable&domain=1471&keyword={{ encodeURIComponent($('Extract Keyword').first().json.keyword) }}&perpage=3&key=__BPS_API_KEY__",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "http-stat",
+      "name": "BPS Statictable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const pressData = $('BPS Pressrelease').first().json;\nconst statData = $('BPS Statictable').first().json;\nconst keyword = $('Extract Keyword').first().json.keyword;\nconst stripHtml = (s) => String(s || '').replace(/&lt;[^&]*?&gt;/g, ' ').replace(/&nbsp;/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();\nlet press = [];\nif (pressData && pressData.data && Array.isArray(pressData.data) && pressData.data.length > 1) {\n  press = pressData.data[1] || [];\n}\nlet stat = [];\nif (statData && statData.data && Array.isArray(statData.data) && statData.data.length > 1) {\n  stat = statData.data[1] || [];\n}\nlet out;\nif (press.length === 0 && stat.length === 0) {\n  out = 'Tidak ada hasil di API BPS Pekanbaru untuk keyword \"' + keyword + '\".';\n} else {\n  out = 'Data BPS Kota Pekanbaru (keyword: \"' + keyword + '\"):\\n\\n';\n  if (press.length > 0) {\n    out += 'Siaran Pers:\\n';\n    press.forEach((p, i) => {\n      out += '[' + (i+1) + '] ' + p.title + ' (' + p.rl_date + ')\\n';\n      out += stripHtml(p.abstract).slice(0, 300) + '\\n\\n';\n    });\n  }\n  if (stat.length > 0) {\n    out += 'Tabel Statistik:\\n';\n    stat.forEach((t, i) => { out += '[' + (i+1) + '] ' + t.title + ' (' + t.updt_date + ')\\n'; });\n  }\n}\nreturn [{ json: { response: out } }];"
+      },
+      "id": "code-format",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Keyword",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Keyword": {
+      "main": [
+        [
+          {
+            "node": "BPS Pressrelease",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BPS Pressrelease": {
+      "main": [
+        [
+          {
+            "node": "BPS Statictable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BPS Statictable": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

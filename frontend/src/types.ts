@@ -85,24 +85,19 @@ export interface RuntimeCreds {
 }
 
 export interface DashboardMetrics {
-  total: number
-  human: number
-  ai: number
-  uniqueSessions: number
-  avgPerUser: number
+  totalPesan: number
+  totalAI: number
+  kbChunks: number
+  filesTerindeks: number
   pesanHariIni: number
-  userHariIni: number
 }
 
-export interface UserContact {
-  session_id: string
-  display_name?: string
-  phone_number?: string
-  last_seen?: string
-  message_count?: number
-  pesan: number
-  terakhir: string
-  isNew: boolean
+export interface IngestedFile {
+  id: number
+  file_name: string
+  file_id: string | null
+  chunk_count: number | null
+  ingested_at: string
 }
 
 export interface ChatRow {
@@ -114,8 +109,7 @@ export interface ChatRow {
 
 export interface DashboardData {
   metrics: DashboardMetrics
-  kbChunks: number
-  users: UserContact[]
+  ingestedFiles: IngestedFile[]
 }
 
 export interface Step {

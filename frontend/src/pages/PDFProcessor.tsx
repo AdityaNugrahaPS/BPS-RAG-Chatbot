@@ -792,12 +792,28 @@ interface PDFProcessorProps {
   setPdfFiles: (f: File[]) => void
 }
 
+const LS_STEP   = 'pdf_processor_step'
+const LS_CONFIG = 'pdf_processor_config'
+const LS_JOBID  = 'pdf_processor_jobId'
+
+const DEFAULT_CONFIG: ProcessConfig = { useAI: false, chunkSize: 1000, overlap: 200, modelId: null }
+
 export default function PDFProcessor({ activeJob, setActiveJob, startPolling, stopPolling, pdfFiles, setPdfFiles }: PDFProcessorProps) {
-  const [step,      setStep]      = useState(0)
+  const [step, setStep] = useState(() => {
+    const savedJobId = localStorage.getItem(LS_JOBID)
+    const parsed = parseInt(localStorage.getItem(LS_STEP) ?? '0')
+    // Hanya restore step > 0 kalau ada jobId tersimpan
+    return (parsed > 0 && savedJobId) ? parsed : 0
+  })
   const files    = pdfFiles
   const setFiles = setPdfFiles
-  const [config,    setConfig]    = useState<ProcessConfig>({ useAI: false, chunkSize: 1000, overlap: 200, modelId: null })
-  const [jobId,     setJobId]     = useState<string | null>(null)
+  const [config, setConfig] = useState<ProcessConfig>(() => {
+    try {
+      const saved = localStorage.getItem(LS_CONFIG)
+      return saved ? { ...DEFAULT_CONFIG, ...JSON.parse(saved) } : DEFAULT_CONFIG
+    } catch { return DEFAULT_CONFIG }
+  })
+  const [jobId, setJobId] = useState<string | null>(() => localStorage.getItem(LS_JOBID))
   const [jobData,   setJobData]   = useState<any>(null)
   const [uploading,     setUploading]     = useState(false)
   const [uploadErr,     setUploadErr]     = useState('')
@@ -805,6 +821,14 @@ export default function PDFProcessor({ activeJob, setActiveJob, startPolling, st
   const [jsonErr,       setJsonErr]       = useState('')
   const [creds,     setCreds]     = useState<RuntimeCreds>({ gemini_key: '', supabase_url: '', supabase_key: '', chat_model_id: null, embed_model_id: null, ai_list: [] })
   const [apiOnline, setApiOnline] = useState<boolean | null>(null)
+
+  // Persist step, config, jobId ke localStorage supaya state tidak hilang saat pindah halaman
+  useEffect(() => { localStorage.setItem(LS_STEP, step.toString()) }, [step])
+  useEffect(() => { localStorage.setItem(LS_CONFIG, JSON.stringify(config)) }, [config])
+  useEffect(() => {
+    if (jobId) localStorage.setItem(LS_JOBID, jobId)
+    else localStorage.removeItem(LS_JOBID)
+  }, [jobId])
 
   useEffect(() => {
     if (activeJob?.jobId) {
@@ -879,10 +903,13 @@ export default function PDFProcessor({ activeJob, setActiveJob, startPolling, st
 
   const reset = () => {
     setStep(0); setPdfFiles([]); setJobId(null); setJobData(null)
-    setConfig({ useAI: false, chunkSize: 1000, overlap: 200, modelId: null })
+    setConfig(DEFAULT_CONFIG)
     setUploadErr('')
     setActiveJob(null)
     stopPolling()
+    localStorage.removeItem(LS_STEP)
+    localStorage.removeItem(LS_CONFIG)
+    localStorage.removeItem(LS_JOBID)
   }
 
   return (

@@ -1,191 +1,123 @@
-# 🤖 BPS RAG Chatbot — Asisten Statistik Kota Pekanbaru Berbasis WhatsApp
+# BPS RAG Chatbot — Asisten Statistik Kota Pekanbaru via WhatsApp
 
-**Sistem chatbot cerdas yang menjawab pertanyaan seputar data statistik BPS Pekanbaru secara otomatis melalui WhatsApp, menggunakan teknologi AI dan basis pengetahuan dari publikasi resmi BPS.**
-
----
-
-## Apa yang Bisa Dilakukan Sistem Ini?
-
-- 💬 **Menjawab pertanyaan statistik via WhatsApp** — Pengguna cukup kirim pesan ke nomor WhatsApp bot, dan sistem akan menjawab berdasarkan data BPS yang sudah di-upload
-- 📄 **Membaca & memahami publikasi BPS** — PDF seperti Pekanbaru Dalam Angka, Statistik Daerah, dan publikasi lainnya di-upload ke sistem dan dijadikan sumber jawaban
-- 📊 **Mengambil data real-time dari BPS Web API** — Untuk data terkini, sistem langsung query ke API resmi BPS (webapi.bps.go.id) dengan kode domain Pekanbaru `1471`
-- 🖥️ **Dashboard admin untuk pengelolaan** — Staf BPS dapat upload PDF baru, memantau status, dan mengelola basis pengetahuan melalui antarmuka web yang mudah digunakan
-
----
-
-## Arsitektur Sistem
+Sistem chatbot yang menjawab pertanyaan seputar data statistik BPS Kota Pekanbaru
+secara otomatis lewat WhatsApp, menggunakan **Retrieval-Augmented Generation (RAG)**
+di atas Google Gemini, n8n, WAHA, dan Supabase pgvector.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      PENGGUNA (WhatsApp)                        │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ Kirim pesan
-                           ▼
-┌──────────────────────────────────────────┐
-│        WAHA (WhatsApp Gateway)           │
-│        Docker · Port 3001                │
-│  Terima pesan → kirim ke n8n via webhook │
-└──────────────────────────┬───────────────┘
-                           │ Webhook POST
-                           ▼
-┌─────────────────────────────────────────────────────┐
-│              n8n (Workflow Automation)               │
-│              Port 5678                               │
-│                                                     │
-│  ┌───────────────────────────────────────────────┐  │
-│  │              Main Workflow                    │  │
-│  │  Terima pesan → AI Agent (Gemini) → Balas     │  │
-│  └──────────────┬──────────────┬─────────────────┘  │
-│                 │              │                     │
-│        ┌────────┘              └──────────┐          │
-│        ▼                                 ▼           │
-│  ┌──────────────────┐   ┌───────────────────────┐   │
-│  │  RAG Subworkflow │   │ BPS API Subworkflow    │   │
-│  │  Cari dokumen di │   │ Query webapi.bps.go.id │   │
-│  │  Supabase vector │   │ data real-time         │   │
-│  └──────┬───────────┘   └───────────┬───────────┘   │
-└─────────┼───────────────────────────┼───────────────┘
-          │                           │
-          ▼                           ▼
-┌──────────────────┐      ┌───────────────────────┐
-│    Supabase      │      │    BPS Web API         │
-│  (Cloud DB +     │      │  webapi.bps.go.id/v1/  │
-│   pgvector)      │      │  Domain Pekanbaru: 1471 │
-│                  │      └───────────────────────┘
-│  Tabel:          │
-│  - documents     │                ▲
-│  - ingested_files│                │ Gemini AI
-└──────────────────┘                │ (chat + embedding)
-          ▲                         │
-          │ embed & store           │
-          │                         │
-┌──────────────────────────────────────────────────────┐
-│                  ADMIN DASHBOARD                      │
-│         React Frontend · Port 5000                   │
-│         FastAPI Backend · Port 8503                  │
-│                                                      │
-│  Upload PDF → Ekstrak → Chunk → Embed → Supabase     │
-└──────────────────────────────────────────────────────┘
-
-┌──────────────────────────┐
-│  Metabase (Opsional)     │
-│  Docker · Port 3002      │
-│  Dashboard Analytics     │
-└──────────────────────────┘
+Pengguna → WhatsApp → WAHA → n8n → [Gemini Embedding → Supabase pgvector → Gemini LLM] → balasan
 ```
 
 ---
 
-## Layanan & Port
+## Apa yang Dilakukan Sistem
 
-| Layanan | Teknologi | Port | Cara Menjalankan | Keterangan |
-|---|---|---|---|---|
-| Admin Dashboard | React + Vite | **5000** | `start.bat` | Antarmuka upload PDF & kredensial |
-| PDF Processor API | FastAPI + Python | **8503** | `start.bat` | Backend pemrosesan PDF |
-| n8n | Node.js | **5678** | `n8n start` (manual) | Workflow otomasi & AI Agent |
-| WAHA | Docker | **3001** | Docker Desktop | WhatsApp Gateway |
-| Metabase | Docker | **3002** | `docker compose up -d` | Analytics (opsional) |
-| Supabase | Cloud | — | Sudah berjalan di cloud | Database vektor (PostgreSQL + pgvector) |
-
----
-
-## Quick Start (Untuk Instalasi yang Sudah Ada)
-
-Jika sistem sudah pernah di-setup sebelumnya, ikuti langkah berikut setiap pagi saat akan bekerja.
-
-### Langkah 1 — Jalankan Dashboard Admin
-
-Klik dua kali file **`start.bat`** di folder proyek.
-
-Browser akan otomatis membuka `http://localhost:5000`.
-
-> 📋 NOTE: `start.bat` menjalankan dua hal sekaligus: **PDF Processor API** (port 8503) dan **Frontend Dashboard** (port 5000).
-
-### Langkah 2 — Jalankan n8n
-
-Buka terminal baru (Command Prompt / PowerShell), lalu ketik:
-
-```
-n8n start
-```
-
-Tunggu hingga muncul tulisan `n8n ready on port 5678`, lalu buka `http://localhost:5678` untuk memastikan berjalan.
-
-> ⚠️ WARNING: n8n **tidak** dijalankan oleh `start.bat`. Harus dijalankan manual setiap kali komputer restart.
-
-### Langkah 3 — Pastikan Docker & WAHA Berjalan
-
-Buka **Docker Desktop**. Pastikan container bernama `waha` berstatus **Running** (indikator hijau).
-
-Jika belum running, klik tombol ▶ di sebelah container `waha`.
-
-### Langkah 4 — Cek Status WhatsApp
-
-Buka `http://localhost:3001` → pastikan sesi `default` berstatus **WORKING**.
-
-Jika status **STOPPED** atau **SCAN_QR_CODE**, ikuti panduan di [PANDUAN_PENGGUNAAN.md](PANDUAN_PENGGUNAAN.md#whatsapp-session-management).
-
-> ✅ Sistem siap digunakan jika semua layanan berjalan dan WhatsApp berstatus WORKING.
-
----
-
-## Dokumentasi Lengkap
-
-| Dokumen | Untuk Siapa | Isi |
-|---|---|---|
-| [SETUP.md](SETUP.md) | Teknisi / Developer | Panduan instalasi lengkap dari awal (fresh install), langkah demi langkah |
-| [PANDUAN_PENGGUNAAN.md](PANDUAN_PENGGUNAAN.md) | Staf Admin BPS | Operasional harian: upload PDF, kelola knowledge base, pantau chatbot |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Semua Pengguna | Solusi masalah umum yang mungkin terjadi |
-
----
-
-## Struktur Folder Proyek
-
-```
-BPS-n8n-RAG_ChatBot/
-│
-├── frontend/                  # Dashboard admin (React + Vite + Tailwind)
-├── program1_pdf_processor/    # PDF ingestion API (FastAPI + Python)
-│   ├── api.py                 # Entry point API (port 8503)
-│   ├── processor.py           # Ekstraksi & chunking PDF
-│   ├── embedder.py            # Embedding via Gemini
-│   ├── supabase_client.py     # Koneksi ke Supabase
-│   └── requirements.txt       # Dependensi Python
-│
-├── bps_crawler/               # Crawler data BPS (referensi)
-├── metabase/                  # Docker Compose untuk Metabase analytics
-├── supabase/                  # SQL schema & snippets
-│   └── snippets/              # SQL untuk buat tabel & fungsi
-│
-├── main_workflow.json          # Workflow n8n utama (WhatsApp + AI Agent)
-├── rag_subworkflow.json        # Sub-workflow RAG Knowledge Base
-├── bps_api_subworkflow.json    # Sub-workflow BPS Web API real-time
-│
-├── start.bat                   # Jalankan dashboard sekaligus (Windows)
-├── README.md                   # File ini
-├── SETUP.md                    # Panduan setup lengkap
-├── PANDUAN_PENGGUNAAN.md       # Panduan operasional harian
-└── TROUBLESHOOTING.md          # Panduan troubleshooting
-```
+- **Menjawab pertanyaan via WhatsApp** — pengguna kirim pesan, bot balas berdasarkan PDF BPS yang sudah di-upload
+- **Mengambil data real-time** dari [BPS Web API](https://webapi.bps.go.id) (publikasi, siaran pers, tabel statis) untuk domain Pekanbaru (kode `1471`)
+- **Dashboard admin** untuk staf BPS: upload PDF baru, kelola credentials, pantau riwayat chat
+- **Pipeline RAG end-to-end**: PDF → ekstraksi teks → chunking → embedding 768-dim → pgvector → cosine similarity search
 
 ---
 
 ## Tech Stack
 
-| Komponen | Teknologi | Detail |
-|---|---|---|
-| AI Chat Model | Google Gemini 2.0 Flash | Model LLM untuk menjawab pertanyaan |
-| AI Embedding Model | Google Gemini Embedding 001 | Mengubah teks menjadi vektor 768 dimensi |
-| Workflow Automation | n8n | Orkestrasi alur kerja chatbot |
-| WhatsApp Gateway | WAHA (WhatsApp HTTP API) | Menerima & mengirim pesan WhatsApp |
-| Vector Database | Supabase PostgreSQL + pgvector | Menyimpan & mencari dokumen berdasarkan makna |
-| PDF Processing | pdfplumber, PyMuPDF, FastAPI | Ekstraksi teks dari PDF |
-| Admin Frontend | React 18, Vite, Tailwind CSS | Dashboard antarmuka admin |
-| Analytics | Metabase | Dashboard monitoring data |
-| Containerization | Docker | Menjalankan WAHA dan Metabase |
+| Lapisan | Teknologi |
+|---|---|
+| AI Chat | Google Gemini 2.0 Flash (n8n) |
+| AI Embedding | Google Gemini Embedding 001 (768 dim) |
+| Workflow | n8n (self-hosted, port 5678) |
+| WhatsApp Gateway | WAHA — Docker (port 3001) |
+| Vector DB | Supabase PostgreSQL + pgvector (cloud) |
+| Backend | FastAPI + Python 3.11 (port 8503) |
+| Frontend | React 18 + Vite + Tailwind (port 5000) |
+| Analytics (opsional) | Metabase — Docker (port 3002) |
 
 ---
 
-## Repository
+## Struktur Repository
 
-GitHub: [https://github.com/AdityaNugrahaPS/BPS-RAG-Chatbot](https://github.com/AdityaNugrahaPS/BPS-RAG-Chatbot)
+```
+BPS-n8n-RAG_ChatBot/
+├── frontend/                    # Dashboard admin (React + Vite + Tailwind)
+├── program1_pdf_processor/      # Backend PDF ingestion (FastAPI)
+│   ├── api.py                   # Entry point API
+│   ├── processor.py             # Orkestrasi pipeline ingest
+│   ├── pdf_extractor.py         # Ekstraksi teks PDF
+│   ├── chunker.py               # Pemecahan teks → chunks
+│   ├── embedder.py              # Embedding via Gemini
+│   ├── supabase_client.py       # Koneksi Supabase
+│   └── requirements.txt
+├── n8n_workflows/               # Workflow n8n (versi sanitasi — boleh dibaca/edit)
+│   ├── 01_main_workflow.json           # Workflow utama: WAHA → AI Agent → balas
+│   ├── 02_knowledge_base_subworkflow.json   # RAG: query → embedding → pgvector
+│   └── 03_bps_api_subworkflow.json     # Query BPS Web API
+├── supabase/
+│   ├── config.toml              # Supabase local config
+│   └── snippets/                # SQL untuk schema awal & RPC match_documents
+├── metabase/
+│   └── docker-compose.yml       # Metabase analytics (opsional)
+├── docs/                        # ★ Dokumentasi lengkap (baca ini dulu)
+│   ├── SETUP.md                 # Instalasi dari nol
+│   ├── N8N_GUIDE.md             # Import & konfigurasi workflow n8n
+│   ├── ARCHITECTURE.md          # Diagram, alur data, peran komponen
+│   ├── USER_GUIDE.md            # Operasional harian untuk admin BPS
+│   └── TROUBLESHOOTING.md       # Solusi masalah umum
+├── .env.example                 # Template environment variables
+├── .gitignore
+└── start.bat                    # Skrip Windows untuk jalankan dashboard
+```
+
+---
+
+## Quick Start
+
+Sistem sudah ter-setup? Jalankan harian dengan 4 langkah:
+
+```powershell
+# 1. Pastikan Docker Desktop running (container `waha` aktif)
+# 2. Jalankan n8n di terminal:
+n8n start
+
+# 3. Klik dua kali start.bat (jalankan backend + frontend, buka browser)
+# 4. Cek WAHA WhatsApp session WORKING di http://localhost:3001
+```
+
+Layanan yang akan tersedia:
+
+| Service | URL | Sumber |
+|---|---|---|
+| Admin Dashboard | http://localhost:5000 | start.bat |
+| PDF Processor API | http://localhost:8503 | start.bat |
+| n8n Editor | http://localhost:5678 | `n8n start` |
+| WAHA Dashboard | http://localhost:3001 | Docker `waha` |
+| Metabase (opsional) | http://localhost:3002 | `docker compose up` |
+
+**Setup baru? Lihat [docs/SETUP.md](docs/SETUP.md).**
+
+---
+
+## Dokumentasi
+
+| Dokumen | Untuk Siapa | Isi |
+|---|---|---|
+| [docs/SETUP.md](docs/SETUP.md) | Developer baru | Setup lengkap dari nol — install dependencies, buat akun Supabase/Gemini/BPS, import workflow, upload PDF pertama |
+| [docs/N8N_GUIDE.md](docs/N8N_GUIDE.md) | Developer | Cara import workflow, set credentials di n8n, struktur node, cara debug |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Developer | Arsitektur sistem, alur data RAG, peran tiap komponen |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Staf admin BPS | Operasional harian: jalankan sistem, upload PDF, pantau chatbot |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Semua | Solusi masalah umum |
+
+---
+
+## Catatan untuk Programmer Baru
+
+1. **Workflow n8n di `n8n_workflows/` sudah disanitasi** — semua API key diganti placeholder seperti `__GEMINI_API_KEY__`, `__SUPABASE_SERVICE_KEY__`, `__BPS_API_KEY__`. Lakukan find-and-replace dengan key kamu sendiri sebelum import. Lihat [docs/N8N_GUIDE.md](docs/N8N_GUIDE.md).
+2. **File `.env` tidak ada di repo** — copy `.env.example` jadi `.env` lalu isi nilai. File `.credentials_all.json` di `program1_pdf_processor/` juga di-ignore — bikin sendiri saat setup.
+3. **Tidak ada CI/CD** — semua dijalankan lokal di Windows. Linux/Mac perlu adaptasi `start.bat`.
+4. **Supabase**: project lama akan di-handover terpisah. Kalau bikin baru, jalankan SQL di `supabase/snippets/` untuk bikin schema.
+
+---
+
+## Lisensi & Kontak
+
+Pengembang awal: **Aditya Nugraha Pratama Saiya** ([@AdityaNugrahaPS](https://github.com/AdityaNugrahaPS))
+Project ini dikembangkan dalam rangka KP di **BPS Kota Pekanbaru**.

@@ -565,6 +565,149 @@ def delete_job(job_id: str):
     return {"deleted": job_id}
 
 
+# ─── Chat / RAG Query ────────────────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    query: str
+    top_k: int = 5
+    threshold: float = 0.5
+
+def _load_all_creds() -> dict:
+    if not ALL_CREDS_FILE.exists():
+        return {}
+    try:
+        return json.loads(ALL_CREDS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+@app.post("/chat")
+async def chat_query(req: ChatRequest):
+    import httpx
+    import google.generativeai as genai
+
+    creds     = _load_all_creds()
+    ai_models = creds.get("ai_models", [])
+    supabase  = creds.get("supabase", {})
+
+    gemini_key = ai_models[0].get("api_key", "") if ai_models else ""
+    sb_url     = supabase.get("url", "").rstrip("/")
+    sb_key     = supabase.get("service_key", "")
+
+    if not gemini_key:
+        raise HTTPException(400, "API key Gemini belum dikonfigurasi di Credentials → AI Models")
+    if not sb_url or not sb_key:
+        raise HTTPException(400, "Supabase belum dikonfigurasi di Credentials → Supabase")
+
+    # 1. Generate embedding untuk query
+    try:
+        genai.configure(api_key=gemini_key)
+        embed_result = genai.embed_content(
+            model="models/gemini-embedding-001",
+            content=req.query,
+            task_type="retrieval_query",
+            output_dimensionality=768,
+        )
+        query_vector = embed_result["embedding"]
+    except Exception as e:
+        raise HTTPException(500, f"Gagal generate embedding: {str(e)}")
+
+    # 2. Vector search via Supabase RPC
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.post(
+                f"{sb_url}/rest/v1/rpc/match_documents",
+                headers={"apikey": sb_key, "Authorization": f"Bearer {sb_key}", "Content-Type": "application/json"},
+                json={"query_embedding": query_vector, "match_threshold": req.threshold, "match_count": req.top_k},
+            )
+        if r.status_code != 200:
+            raise HTTPException(500, f"Supabase RPC error: {r.status_code} — {r.text[:200]}")
+        chunks = r.json()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Gagal search Supabase: {str(e)}")
+
+    if not chunks:
+        return {
+            "answer": "Maaf, saya tidak menemukan informasi yang relevan di knowledge base BPS Kota Pekanbaru untuk pertanyaan tersebut.",
+            "chunks": [],
+            "chunks_used": 0,
+        }
+
+    # 3. Generate jawaban menggunakan Gemini
+    context = "\n\n---\n\n".join([
+        f"[Sumber: {c.get('metadata', {}).get('fileName', 'Dokumen BPS') if isinstance(c.get('metadata'), dict) else 'Dokumen BPS'}]\n{c.get('content', '')}"
+        for c in chunks
+    ])
+
+    prompt = f"""Kamu adalah asisten virtual BPS Kota Pekanbaru yang membantu menjawab pertanyaan tentang data statistik dan informasi BPS.
+
+Jawab pertanyaan berikut berdasarkan konteks dokumen yang tersedia. Jika informasi tidak ada di konteks, katakan dengan jujur.
+Gunakan bahasa Indonesia yang jelas dan formal. Sertakan angka/data spesifik jika tersedia.
+
+KONTEKS DOKUMEN:
+{context}
+
+PERTANYAAN: {req.query}
+
+JAWABAN:"""
+
+    try:
+        chat_model_id = ai_models[0].get("model", "gemini-2.0-flash") if ai_models else "gemini-2.0-flash"
+        # Gunakan model chat, bukan embedding model
+        if "embed" in chat_model_id.lower():
+            chat_model_id = "gemini-2.0-flash"
+        model = genai.GenerativeModel(chat_model_id)
+        response = model.generate_content(prompt)
+        answer = response.text
+    except Exception as e:
+        answer = f"[Gagal generate jawaban: {str(e)}]\n\nKonteks yang ditemukan:\n{context[:500]}..."
+
+    return {
+        "answer": answer,
+        "chunks": [{"content": c.get("content", "")[:300], "similarity": c.get("similarity", 0), "metadata": c.get("metadata", {})} for c in chunks],
+        "chunks_used": len(chunks),
+    }
+
+
+# ─── Delete file dari knowledge base ────────────────────────────────────────
+
+class DeleteFileRequest(BaseModel):
+    file_id: int
+    file_name: str
+
+@app.delete("/knowledge-base/file")
+async def delete_kb_file(req: DeleteFileRequest):
+    creds    = _load_all_creds()
+    supabase = creds.get("supabase", {})
+    sb_url   = supabase.get("url", "").rstrip("/")
+    sb_key   = supabase.get("service_key", "")
+
+    if not sb_url or not sb_key:
+        raise HTTPException(400, "Supabase belum dikonfigurasi")
+
+    sb = SupabaseRAG(sb_url, sb_key)
+    deleted_docs = 0
+
+    try:
+        # Hapus dari documents berdasarkan metadata fileName
+        res = sb.client.table("documents")\
+            .delete()\
+            .filter("metadata->>fileName", "eq", req.file_name)\
+            .execute()
+        deleted_docs = len(res.data) if res.data else 0
+    except Exception:
+        pass
+
+    try:
+        # Hapus dari ingested_files
+        sb.client.table("ingested_files").delete().eq("id", req.file_id).execute()
+    except Exception as e:
+        raise HTTPException(500, f"Gagal hapus dari ingested_files: {str(e)}")
+
+    return {"ok": True, "deleted_chunks": deleted_docs, "file_name": req.file_name}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("api:app", host="0.0.0.0", port=8503, reload=False)

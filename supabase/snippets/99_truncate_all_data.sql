@@ -1,0 +1,1 @@
+TRUNCATE TABLE documents, ingested_files, n8n_chat_histories RESTART IDENTITY;
